@@ -7,6 +7,25 @@ IMPORTANT_SKILLS = [
     "django", "flask", "fastapi"
 ]
 
+SKILL_WEIGHT = {
+    "react": 5,
+    "next": 5,
+    "node": 5,
+    "express": 5,
+    "django": 5,
+    "flask": 5,
+    "fastapi": 5,
+    "three": 3,
+    "mongodb": 3,
+    "firebase": 3,
+    "redux": 3,
+    "typescript": 3,
+    "vite": 3,
+    "webpack": 3,
+    "tailwind": 3,
+    "gsap": 2
+}
+
 def fetch_github_profile(username):
     url = f"https://api.github.com/users/{username}/repos"
     response = requests.get(url)
@@ -26,11 +45,9 @@ def fetch_github_profile(username):
         stars = repo["stargazers_count"]
         desc = repo["description"] or "No description available"
 
-        # ✅ Language tracking
         if lang:
             languages[lang] = languages.get(lang, 0) + 1
 
-        # ✅ Detect last commit
         commits_url = f"https://api.github.com/repos/{username}/{name}/commits"
         commits_response = requests.get(commits_url)
 
@@ -41,13 +58,11 @@ def fetch_github_profile(username):
             if len(commits) > 0:
                 last_commit = commits[0]["commit"]["author"]["date"]
 
-                # ✅ commit skill detection
                 msg = commits[0]["commit"]["message"].lower()
                 for skill in IMPORTANT_SKILLS:
                     if skill in msg:
                         detected_skills.add(skill)
 
-        # ✅ package.json detection
         package_url = f"https://raw.githubusercontent.com/{username}/{name}/main/package.json"
         package_response = requests.get(package_url)
 
@@ -66,12 +81,10 @@ def fetch_github_profile(username):
             except:
                 pass
 
-        # ✅ topic detection
         for t in repo.get("topics", []):
             if t.lower() in IMPORTANT_SKILLS:
                 detected_skills.add(t.lower())
 
-        # ✅ ADD FULL PROJECT OBJECT
         projects.append({
             "name": name,
             "stars": stars,
@@ -79,21 +92,34 @@ def fetch_github_profile(username):
             "description": desc
         })
 
-    # ✅ Sort projects
     projects = sorted(
         projects,
         key=lambda x: (
-            -x["stars"],                    # most stars first
-            x["last_commit"] is None,       # push no-commit projects down
-            x["last_commit"]                # newest first
+            -x["stars"],
+            x["last_commit"] is None,
+            x["last_commit"]
         )
     )
 
-    # ✅ sort languages by usage
-    dominant_languages = sorted(languages, key=languages.get, reverse=True)
+    skill_scores = {
+        skill: SKILL_WEIGHT.get(skill, 1)
+        for skill in detected_skills
+    }
+
+    sorted_skills = sorted(
+        skill_scores.items(),
+        key=lambda x: -x[1]
+    )
+
+    dominant_languages = sorted(
+        languages,
+        key=languages.get,
+        reverse=True
+    )
 
     return {
         "languages": dominant_languages[:3],
-        "skills": list(detected_skills),
+        "skills": [s[0] for s in sorted_skills],
+        "skill_scores": skill_scores,
         "top_projects": projects[:5]
     }
