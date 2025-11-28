@@ -210,7 +210,8 @@ export default function CinematicLanding() {
         </div>
 
         {/* Footer Stats */}
-        <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-white/10 bg-black/20 backdrop-blur-md mt-auto pointer-events-auto">
+        <div className="flex justify-center">
+        <div className="p-8 grid grid-cols-2 md:grid-cols-4 gap-8 border-t border-white/10 bg-black/20 backdrop-blur-md mt-auto pointer-events-auto max-w-6xl w-full">
             {[
                 { label: 'Global Reach', val: '142', icon: Globe },
                 { label: 'Processing', val: '99%', icon: Cpu },
@@ -227,7 +228,7 @@ export default function CinematicLanding() {
              <div className="flex flex-col justify-end">
                 <div className="text-right text-white/40 text-xs">SCROLL TO EXPLORE</div>
             </div>
-        </div>
+        </div></div>
 
       </main>
     </section>
@@ -338,6 +339,136 @@ export default function CinematicLanding() {
     </div>
   </div>
 </section>
+
+<footer className="relative w-full overflow-hidden bg-black">
+  {/* background grid */}
+  <div
+    className="pointer-events-none absolute inset-0 opacity-[0.1]"
+    aria-hidden="true"
+    style={{
+      backgroundImage: `
+        linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)
+      `,
+      backgroundSize: "56px 56px",
+    }}
+  />
+
+  {/* top fade */}
+  <div className="pointer-events-none absolute top-0 left-0 h-24 w-full bg-gradient-to-b from-black to-transparent" />
+
+  {/* glow orbs */}
+  <div className="pointer-events-none absolute -bottom-40 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
+
+  <div className="relative z-10 mx-auto max-w-6xl px-6 py-20">
+    {/* main row */}
+    <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+      {/* Brand */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-white tracking-tight">
+          Intervue
+        </h3>
+        <p className="max-w-xs text-sm text-neutral-400">
+          Interview evaluation grounded in real signals — code, clarity, and
+          substance.
+        </p>
+        <p className="text-xs text-neutral-500">
+          Built for developers, not resumes.
+        </p>
+      </div>
+
+      {/* Navigation */}
+      <div className="grid grid-cols-2 gap-8 text-sm">
+        <div className="space-y-4">
+          <p className="uppercase tracking-wider text-neutral-500 text-xs">
+            Product
+          </p>
+          <ul className="space-y-2">
+            {["How it works", "Interview simulation", "Sample report", "Pricing"].map(
+              (item) => (
+                <li key={item}>
+                  <a
+                    href="#"
+                    className="text-neutral-400 transition hover:text-white"
+                  >
+                    {item}
+                  </a>
+                </li>
+              )
+            )}
+          </ul>
+        </div>
+
+        <div className="space-y-4">
+          <p className="uppercase tracking-wider text-neutral-500 text-xs">
+            Company
+          </p>
+          <ul className="space-y-2">
+            {["About", "Blog", "Careers", "Contact"].map((item) => (
+              <li key={item}>
+                <a
+                  href="#"
+                  className="text-neutral-400 transition hover:text-white"
+                >
+                  {item}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
+      {/* Status / Trust */}
+      <div className="flex flex-col justify-between gap-6">
+        <div className="space-y-4">
+          <p className="uppercase tracking-wider text-neutral-500 text-xs">
+            Platform status
+          </p>
+          <div className="flex items-center gap-2 text-sm text-neutral-400">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+            </span>
+            Coming soon! dont panic - oranges
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          {["GitHub", "X"].map((s) => (
+            <a
+              key={s}
+              href="#"
+              className="group inline-flex items-center gap-2 text-neutral-400 transition hover:text-white"
+            >
+              <span className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center group-hover:border-white/20">
+                {s[0]}
+              </span>
+              <span className="text-sm">{s}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* bottom */}
+    <div className="mt-16 flex flex-col-reverse gap-6 sm:flex-row sm:items-center sm:justify-between border-t border-white/10 pt-8">
+      <p className="text-xs text-neutral-500">
+        © {new Date().getFullYear()} Intervue. All rights reserved.
+      </p>
+      <div className="flex gap-6 text-xs text-neutral-500">
+        {["Privacy", "Terms", "Security", "Ethics"].map((item) => (
+          <a
+            key={item}
+            href="#"
+            className="transition hover:text-white"
+          >
+            {item}
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</footer>
 
     
     </div>
