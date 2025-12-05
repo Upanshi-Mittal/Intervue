@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { motion } from 'motion/react';
 import { ArrowRight, Play, Globe, Cpu } from 'lucide-react';
 
-// --- SHADERS (The Liquid Magic) ---
+
 
 const vertexShader = `
   varying vec2 vUv;
@@ -54,7 +54,7 @@ const LiquidBackground = () => {
   const { size, viewport } = useThree();
   const [hovered, setHover] = useState(false);
   
-  // Load a high-res moody image (City/Cyberpunk style)
+ 
   const texture = useTexture("https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8YmxhY2slMjBncmFpbnxlbnwwfHwwfHx8MA%3D%3D");
   
   // Uniforms: Variables passed to the shader
@@ -77,11 +77,11 @@ const LiquidBackground = () => {
 
     // Smoothly interpolate hover intensity (Lerp)
     // If mouse moves, intensity goes up, then slowly fades down
-    const targetHover = hovered ? 1.5 : 0.2; // 0.2 means water always moves slightly
+    const targetHover = hovered ? 15 : 0.5; // 0.2 means water always moves slightly
     meshRef.current.material.uniforms.uHover.value = THREE.MathUtils.lerp(
       meshRef.current.material.uniforms.uHover.value,
       targetHover,
-      0.05
+    .1
     );
 
     // Convert mouse screen coords (-1 to 1) to UV coords (0 to 1)
