@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { motion } from 'motion/react';
 import { ArrowRight, Play, Globe, Cpu } from 'lucide-react';
 
-
+import Link from 'next/link';
 
 const vertexShader = `
   varying vec2 vUv;
@@ -146,13 +146,24 @@ export default function CinematicLanding() {
             >
                 INTERVUE.AI
             </motion.div>
-            <motion.button 
+          
+
+
+          <div className='flex flex-wrap gap-4'>
+         <Link href={'/register'}>  <motion.button 
                  initial={{ opacity: 0 }}
                  animate={{ opacity: 1 }}
-                 className="px-6 py-2 border border-white/20 rounded-full text-white text-xs uppercase tracking-widest hover:bg-white hover:text-black transition-colors backdrop-blur-md"
+                 className="px-6 py-2 border border-white/20 bg-white text-black rounded-full  text-xs uppercase tracking-widest hover:bg-white/50 hover:text-black transition-colors backdrop-blur-md"
             >
-                Menu
-            </motion.button>
+                Register
+            </motion.button></Link>
+            <Link href={'/login'}>  <motion.button 
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 1 }}
+                 className="px-6 py-2 border border-white/20 rounded-full text-white text-xs uppercase tracking-widest hover:bg-white/15 hover:border-white  transition-colors backdrop-blur-md"
+            >
+                Login
+            </motion.button></Link> </div>
         </header>
         </div>
 
