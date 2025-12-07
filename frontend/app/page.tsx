@@ -131,41 +131,10 @@ export default function CinematicLanding() {
       </div>
 
       {/* 2. The HTML Content Layer (Foreground) */}
-      <main className="relative z-10 w-full h-full flex flex-col pointer-events-none">
+      <main className="relative z-10 w-full h-full flex flex-col pointer-events-none pt-40">
         
-        {/* Navbar */}
-        <div className=' w-full flex justify-center items-center'>
-        <header className=" max-w-6xl w-full p-8 flex justify-between items-center pointer-events-auto">
-
-          
-            <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1 }}
-                className="text-white font-bold text-xl tracking-widest mix-blend-difference"
-            >
-                INTERVUE.AI
-            </motion.div>
-          
-
-
-          <div className='flex flex-wrap gap-4'>
-         <Link href={'/register'}>  <motion.button 
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 className="px-6 py-2 border border-white/20 bg-white text-black rounded-full  text-xs uppercase tracking-widest hover:bg-white/50 hover:text-black transition-colors backdrop-blur-md"
-            >
-                Register
-            </motion.button></Link>
-            <Link href={'/login'}>  <motion.button 
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 1 }}
-                 className="px-6 py-2 border border-white/20 rounded-full text-white text-xs uppercase tracking-widest hover:bg-white/15 hover:border-white  transition-colors backdrop-blur-md"
-            >
-                Login
-            </motion.button></Link> </div>
-        </header>
-        </div>
+ 
+     
 
         {/* Hero Content */}
         <div className="flex-1 flex flex-col justify-center px-8 md:px-20 max-w-7xl mx-auto w-full">
