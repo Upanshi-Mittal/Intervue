@@ -1,75 +1,68 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { useEffect, useMemo } from "react";
-import grain from "../../public/grain.avif";
+import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import grain from "../../public/grain.avif";
+import { useRouter } from "next/navigation";
 
 type NavbarProps = {
   isLoggedIn: boolean;
 };
 
 export default function Navbar({ isLoggedIn }: NavbarProps) {
+  const router = useRouter();
+
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
+
+  useEffect(() => {
+    const onLogin = () => setLoggedIn(true);
+    const onLogout = () => setLoggedIn(false);
+    const onRegister = () => setLoggedIn(true);
+    window.addEventListener("login", onLogin);
+    window.addEventListener("logout", onLogout);
+    window.addEventListener("register", onRegister);
+
+    return () => {
+      window.removeEventListener("login", onLogin);
+      window.removeEventListener("logout", onLogout);
+      window.removeEventListener("register", onRegister);
+    };
+  }, []);
+
   const links = useMemo(() => {
-    if (isLoggedIn) {
+    if (loggedIn) {
       return [
-        { name: "Dashboard", href: "/dashboard", variant: "ghost" },
-        { name: "Interview", href: "/interview", variant: "ghost" },
-        { name: "Logout", href: "/logout", variant: "outline" },
+        { name: "Dashboard", href: "/dashboard", variant: "ghost" as const },
+        { name: "Interview", href: "/interview", variant: "ghost" as const },
       ];
     }
 
     return [
-      { name: "Register", href: "/register", variant: "primary" },
-      { name: "Login", href: "/login", variant: "outline" },
+      { name: "Register", href: "/register", variant: "primary" as const },
+      { name: "Login", href: "/login", variant: "outline" as const },
     ];
-  }, [isLoggedIn]);
-
-  useEffect(() => {
-    
-    window.addEventListener("scroll", () => {
-
-        if(window.scrollY) {
-            // add shadow to navbar
-            const navbar = document.querySelector("#nav");
-            if(navbar) {
-                navbar.classList.add("backdrop-blur-lg", "bg-white/10", "shadow-lg", "w-[60%]");
-                 navbar.classList.remove("w-full");
-            }
-        } else {
-            const navbar = document.querySelector("header");
-            if(navbar) {
-                navbar.classList.remove("backdrop-blur-lg", "bg-white/10", "shadow-lg", "w-[60%]");
-                   navbar.classList.add("w-full");
-            }
-        }
-
-    });
-
-  }, []);
+  }, [loggedIn]);
 
   return (
-    <div className="w-full fixed top-5 z-99 flex justify-center items-center pointer-events-none ">
-      <header id='nav' className="max-w-6xl p-6 transition-all duration-600 ease-out rounded-md w-full flex justify-between items-center pointer-events-auto">
-       
-       <Image src={grain} alt="grain" className="absolute opacity-5 inset-0 w-full h-full object-cover mix-blend-overlay pointer-events-none"
-       fill
+    <div className="w-full fixed top-5 z-50 flex justify-center pointer-events-none">
+      <header
+        id="nav"
+        className="relative max-w-6xl p-6 transition-all rounded-md w-full flex justify-between items-center pointer-events-auto"
+      >
+        <Image
+          src={grain}
+          alt="grain"
+          fill
+          className="absolute opacity-5 inset-0 object-cover mix-blend-overlay pointer-events-none"
+        />
 
-       ></Image>
-
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-white font-bold text-xl tracking-widest mix-blend-difference"
-        >
+        <div className="text-white font-bold text-xl tracking-widest">
           <Link href="/">INTERVUE.AI</Link>
-        </motion.div>
+        </div>
 
-        {/* Right actions */}
-        <div className="flex flex-wrap gap-4">
+        <div className="flex gap-4 items-center">
           {links.map((link, i) => (
             <Link key={link.name} href={link.href}>
               <motion.button
@@ -82,6 +75,23 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
               </motion.button>
             </Link>
           ))}
+
+          {loggedIn && (
+            <motion.button
+              className={getButtonStyle("outline")}
+              onClick={async () => {
+                await fetch("http://localhost:4000/api/auth/logout", {
+                  method: "POST",
+                  credentials: "include",
+                });
+
+                setLoggedIn(false); 
+                router.replace("/");
+              }}
+            >
+              Logout
+            </motion.button>
+          )}
         </div>
       </header>
     </div>
@@ -93,29 +103,10 @@ function getButtonStyle(
 ) {
   switch (variant) {
     case "primary":
-      return `
-        px-6 py-2 rounded-full
-        border border-white/20
-        bg-white text-black
-        text-xs uppercase tracking-widest
-        backdrop-blur-md
-        hover:bg-white/50 transition-colors
-      `;
+      return "px-6 py-2 rounded-full bg-white text-black text-xs uppercase";
     case "outline":
-      return `
-        px-6 py-2 rounded-full
-        border border-white/20
-        text-white
-        text-xs uppercase tracking-widest
-        backdrop-blur-md
-        hover:bg-white/15 hover:border-white transition-colors
-      `;
+      return "px-6 py-2 rounded-full border border-white/20 text-white text-xs uppercase";
     case "ghost":
-      return `
-        px-6 py-2 rounded-full
-        text-white/80
-        text-xs uppercase tracking-widest
-        hover:text-white transition-colors
-      `;
+      return "px-6 py-2 rounded-full text-white/80 text-xs uppercase";
   }
 }

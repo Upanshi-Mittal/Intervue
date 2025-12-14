@@ -3,8 +3,46 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { EnvelopeSimple, LockSimple } from 'phosphor-react'
+import { FormEvent, useEffect, useState } from 'react'
+import {useRouter} from 'next/navigation'
 
 export default function LoginPage() {
+  const router = useRouter();
+    const [email, setEmail] = useState<string>("")
+    const [password, setPassword] = useState<string>("")
+  const handleLogin = async(e : FormEvent<HTMLFormElement>) => {
+    // handle login logic here
+    e.preventDefault();
+    if (!email || !password) {
+      console.log('Please fill in all fields');
+      return;
+    }
+    const url = `http://localhost:4000/api/auth/login`;
+    try{
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: "include",
+        body: JSON.stringify({email, password }),
+      });
+      const data = await response.json();
+      console.log('Login successful:', data);
+
+      setTimeout(() => {
+        window.dispatchEvent(new Event("login"));
+        router.push("/dashboard");
+    },1000);
+    } catch (error) {
+      console.error('Error during login:', error);
+    }
+  }
+    useEffect(() => {
+      console.log('Logging in with:', { email, password });
+    }, [email, password])
+  
+  
   return (
     <div className="relative min-h-screen w-full bg-neutral-950 flex items-center justify-center overflow-hidden">
       {/* subtle gradient noise */}
@@ -33,7 +71,7 @@ export default function LoginPage() {
         </div>
 
         {/* form */}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleLogin}>
           {/* email */}
           <div className="relative">
             <EnvelopeSimple
@@ -52,6 +90,9 @@ export default function LoginPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              id="email"
             />
           </div>
 
@@ -73,6 +114,9 @@ export default function LoginPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              id="password"
             />
           </div>
 
@@ -102,6 +146,7 @@ export default function LoginPage() {
               hover:bg-white/90
               transition
             "
+            type="submit"
           >
             Sign in
           </motion.button>

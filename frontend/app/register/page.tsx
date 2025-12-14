@@ -7,8 +7,57 @@ import {
   EnvelopeSimple,
   LockSimple
 } from 'phosphor-react'
+import { useState, FormEvent, useEffect} from 'react'
+import {useRouter} from 'next/navigation'
 
 export default function RegisterPage() {
+  const router = useRouter();
+
+  const [username, setUsername] = useState<string>("")
+  const [email, setEmail] = useState<string>("")
+  const [password, setPassword] = useState<string>("")
+  const [confirmPassword, setConfirmPassword] = useState<string>("")
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    try{
+    if (!username || !email || !password || !confirmPassword) {
+      console.log("Please fill in all fields")
+      return
+    }
+    if (password !== confirmPassword){
+      console.log("Passwords do not match")
+      return
+    }
+    const res = await fetch("http://localhost:4000/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        username,
+        email,
+        password,
+        confirm_password: confirmPassword,
+      }),
+    })
+    const data = await res.json()
+    console.log(data)
+    if (res.ok) {
+      console.log("Registration successful");
+      setTimeout(() => {
+        router.push("/dashboard")},1000);
+    } else {
+      console.log("Registration failed:", data.message)
+    }
+
+  } catch (error) {
+    console.error("Error during registration:", error)
+  }
+  }
+  useEffect(() => {
+    console.log('Registering with:', { username, email, password, confirmPassword });
+  }, [username, email, password, confirmPassword]);
+
   return (
     <div className="relative min-h-screen w-full bg-neutral-950 flex items-center justify-center overflow-hidden">
       {/* ambient gradient */}
@@ -37,7 +86,7 @@ export default function RegisterPage() {
         </div>
 
         {/* form */}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {/* name */}
           <div className="relative">
             <User
@@ -56,6 +105,9 @@ export default function RegisterPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              id="username"
+              onChange={(e) => setUsername(e.target.value)}
+              value={username}
             />
           </div>
 
@@ -77,6 +129,9 @@ export default function RegisterPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              id="email"
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
             />
           </div>
 
@@ -98,6 +153,9 @@ export default function RegisterPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              id="password"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
             />
           </div>
 
@@ -119,6 +177,9 @@ export default function RegisterPage() {
                 focus:ring-2 focus:ring-white/20
                 transition
               "
+              id="confirmPassword"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={confirmPassword}
             />
           </div>
 
