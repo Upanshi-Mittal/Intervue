@@ -51,6 +51,7 @@ export default function RegisterPage() {
       const data = await res.json()
       console.log(data)
       if (res.ok) {
+        window.dispatchEvent(new Event("register"));
         console.log("One page done successfully");
         localStorage.setItem("userId", data.user.id);
         setTimeout(() => {
