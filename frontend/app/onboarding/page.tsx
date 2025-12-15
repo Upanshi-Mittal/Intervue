@@ -1,5 +1,4 @@
 'use client'
-
 import { motion } from 'framer-motion'
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
@@ -46,10 +45,10 @@ export default function OnboardingPage() {
 
     const userId = localStorage.getItem("userId");
 
-if (!userId) {
-  console.error("User not logged in");
-  return;
-}
+    if (!userId) {
+      console.error("User not logged in");
+      return;
+    }
     if (!role || !experience || techStack.length === 0) {
       console.log('Please complete required fields')
       return
@@ -63,7 +62,7 @@ if (!userId) {
       interviewStyle: style
     })
 
-const url = `http://localhost:4000/api/user/onboarding`;
+    const url = `http://localhost:4000/api/auth/onboarding`;
     const payload = {
       userId,
       role,
@@ -84,11 +83,11 @@ const url = `http://localhost:4000/api/user/onboarding`;
       });
       const data = await response.json();
       if (!response.ok) {
-  console.error("Onboarding failed:", data.message);
-  return;
-}
+        console.error("Onboarding failed:", data.message);
+        return;
+      }
 
-router.push("/dashboard");
+      router.push("/dashboard");
 
     } catch (error) {
       console.error('Error during onboarding:', error);

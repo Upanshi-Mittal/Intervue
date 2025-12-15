@@ -9,9 +9,9 @@ const JWT_EXPIRES_IN = "7d";
 /* -------------------- REGISTER -------------------- */
 export const register = async (req: Request, res: Response) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, github ,password } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !github) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -25,6 +25,7 @@ export const register = async (req: Request, res: Response) => {
     const user = await User.create({
       username,
       email,
+      github,
       password: hashedPassword,
     });
 
@@ -34,6 +35,7 @@ export const register = async (req: Request, res: Response) => {
         id: user._id,
         name: user.username,
         email: user.email,
+        github: user.github
       },
     });
   } catch (error) {
