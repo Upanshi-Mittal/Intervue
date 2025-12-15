@@ -31,8 +31,14 @@ export default function LoginPage() {
       console.log('Login successful:', data);
 
       setTimeout(() => {
+        localStorage.setItem("userId", data.user.id);
         window.dispatchEvent(new Event("login"));
-        router.push("/dashboard");
+        if (data.user.onboardingCompleted) {
+  router.push("/dashboard");
+} else {
+  router.push("/onboarding");
+}
+
     },1000);
     } catch (error) {
       console.error('Error during login:', error);

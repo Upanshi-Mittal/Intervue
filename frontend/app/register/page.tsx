@@ -7,8 +7,8 @@ import {
   EnvelopeSimple,
   LockSimple
 } from 'phosphor-react'
-import { useState, FormEvent, useEffect} from 'react'
-import {useRouter} from 'next/navigation'
+import { useState, FormEvent, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,46 +17,57 @@ export default function RegisterPage() {
   const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [confirmPassword, setConfirmPassword] = useState<string>("")
+  const [github, setGithub] = useState<string>("")
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    try{
-    if (!username || !email || !password || !confirmPassword) {
-      console.log("Please fill in all fields")
-      return
-    }
-    if (password !== confirmPassword){
-      console.log("Passwords do not match")
-      return
-    }
-    const res = await fetch("http://localhost:4000/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        username,
-        email,
-        password,
-        confirm_password: confirmPassword,
-      }),
-    })
-    const data = await res.json()
-    console.log(data)
-    if (res.ok) {
-      console.log("Registration successful");
-      setTimeout(() => {
-        router.push("/dashboard")},1000);
-    } else {
-      console.log("Registration failed:", data.message)
-    }
+    try {
+      if (!username || !email || !password || !confirmPassword || !github) {
+        console.log("Please fill in all fields")
+        return
+      }
+      if (password !== confirmPassword) {
+        console.log("Passwords do not match")
+        return
+      }
+      const githubRes = await fetch(`https://api.github.com/users/${github}`);
 
-  } catch (error) {
-    console.error("Error during registration:", error)
-  }
+      if (!githubRes.ok) {
+        console.log("GitHub username not found");
+        return;
+      }
+
+      const res = await fetch("http://localhost:4000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          username,
+          email,
+          github,
+          password,
+          confirm_password: confirmPassword,
+        }),
+      })
+      const data = await res.json()
+      console.log(data)
+      if (res.ok) {
+        console.log("One page done successfully");
+        localStorage.setItem("userId", data.user.id);
+        setTimeout(() => {
+          router.push("/onboarding")
+        }, 1000);
+      } else {
+        console.log("Registration failed:", data.message)
+      }
+
+    } catch (error) {
+      console.error("Error during registration:", error)
+    }
   }
   useEffect(() => {
-    console.log('Registering with:', { username, email, password, confirmPassword });
-  }, [username, email, password, confirmPassword]);
+    console.log('Registering with:', { username, email, github, password, confirmPassword });
+  }, [username, email, github, password, confirmPassword]);
 
   return (
     <div className="relative min-h-screen w-full bg-neutral-950 flex items-center justify-center overflow-hidden">
@@ -135,6 +146,30 @@ export default function RegisterPage() {
             />
           </div>
 
+          {/* github */}
+          <div className="relative">
+            <User
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40"
+            />
+            <input
+              type="text"
+              placeholder="GitHub Username"
+              className="
+                w-full rounded-lg bg-white/5
+                pl-10 pr-3 py-2.5
+                text-sm text-white placeholder:text-white/40
+                outline-none
+                ring-1 ring-white/10
+                focus:ring-2 focus:ring-white/20
+                transition
+              "
+              id="github"
+              onChange={(e) => setGithub(e.target.value)}
+              value={github}
+            />
+          </div>
+
           {/* password */}
           <div className="relative">
             <LockSimple
@@ -196,7 +231,7 @@ export default function RegisterPage() {
           </p>
 
           {/* button */}
-         <motion.button
+          <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="
@@ -208,14 +243,14 @@ export default function RegisterPage() {
               transition
             "
           >
-            Create account
+            Next
           </motion.button>
         </form>
 
         {/* footer */}
         <p className="mt-6 text-center text-xs text-white/50">
           Already have an account?{' '}
-         <Link href="/login"> <span className="text-white hover:underline cursor-pointer">
+          <Link href="/login"> <span className="text-white hover:underline cursor-pointer">
             Sign in
           </span></Link>
         </p>
