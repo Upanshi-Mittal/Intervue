@@ -1,5 +1,7 @@
 import express from "express";
 import { login, register } from "../controllers/authController";
+import { completeOnboarding } from "../controllers/onboardingroutes";
+
 const authRoutes = express.Router()
 
 authRoutes.post("/login", login)
@@ -14,4 +16,8 @@ authRoutes.post("/logout", (req, res) => {
 
   return res.status(200).json({ message: "Logged out successfully" });
 });
+authRoutes.post("/onboarding",completeOnboarding);
+
 export default authRoutes;
+
+
