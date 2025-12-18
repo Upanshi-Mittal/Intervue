@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
-
 const JWT_SECRET = process.env.JWT_SECRET as string || "Oranges"
 const JWT_EXPIRES_IN = "7d";
 
@@ -63,8 +62,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+           const payload = {
+         userId: user._id.toString(),
+       };
+
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: payload.userId },
       JWT_SECRET,
       { expiresIn: JWT_EXPIRES_IN }
     );
@@ -82,6 +85,7 @@ export const login = async (req: Request, res: Response) => {
         id: user._id,
         name: user.username,
         email: user.email,
+        onboardingCompleted: user.onboardingCompleted,
       },
     });
   } catch (error) {
@@ -89,3 +93,13 @@ export const login = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
+/* -------------------- LOGOUT -------------------- */
+export const logout = (req: Request, res: Response) => {
+ res.clearCookie("auth_token", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+  return res.status(200).json({ message: "Logged out successfully" });
+}

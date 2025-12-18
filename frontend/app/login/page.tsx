@@ -11,7 +11,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState<string>("")
     const [password, setPassword] = useState<string>("")
   const handleLogin = async(e : FormEvent<HTMLFormElement>) => {
-    // handle login logic here
+   
     e.preventDefault();
     if (!email || !password) {
       console.log('Please fill in all fields');
@@ -34,6 +34,7 @@ export default function LoginPage() {
         localStorage.setItem("userId", data.user.id);
         window.dispatchEvent(new Event("login"));
         if (data.user.onboardingCompleted) {
+          console.log("Redirecting to dashboard");
   router.push("/dashboard");
 } else {
   router.push("/onboarding");

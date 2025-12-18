@@ -38,6 +38,7 @@ export const completeOnboarding = async (req: Request, res: Response) => {
       user: {
         id: user._id,
         onboardingCompleted: user.onboardingCompleted,
+        user
       },
     });
   } catch (error) {

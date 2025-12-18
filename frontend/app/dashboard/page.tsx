@@ -1,7 +1,18 @@
 import Image from "next/image";
 import { Settings, FileText, Play } from "lucide-react";
+// import { useEffect } from "react";
 
 export default function DashboardProfile() {
+
+
+  // useEffect(() => {
+  //   console.log("DashboardProfile mounted");
+ 
+
+
+  // }, []);
+   
+
   return (
     <div className="max-w-4xl mx-auto px-6 pt-50">
       {/* Header */}
