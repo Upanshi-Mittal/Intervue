@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { cookies } from "next/headers";
-import Navbar from "./ui/Navbar";
+import { QueryProvider } from '../providers/QueryProvider';
+import { InitAuth } from './InitAuth';
+import { NavbarWrapper } from './ui/NavbarWrapper';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,18 +26,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
 
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token");
-  const isLoggedIn = !!token ;
-
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-           <Navbar isLoggedIn={isLoggedIn} />
-           
-        {children}
+        <QueryProvider>
+          <InitAuth />
+          <NavbarWrapper />
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );

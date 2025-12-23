@@ -2,24 +2,22 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Image from "next/image";
 import grain from "../../public/grain.avif";
 import { useRouter } from "next/navigation";
-
-type NavbarProps = {
-  isLoggedIn: boolean;
-};
-
-export default function Navbar({ isLoggedIn }: NavbarProps) {
+import { useAuthStore } from "../../stores/authStore";
+export default function Navbar() {
   const router = useRouter();
 
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
+  const loggedIn = useAuthStore((s) => s.isAuthenticated);
+  const setAuthenticated = useAuthStore((s) => s.setAuthenticated);
+  const logoutStore = useAuthStore((s) => s.logout);
 
   useEffect(() => {
-    const onLogin = () => setLoggedIn(true);
-    const onLogout = () => setLoggedIn(false);
-    const onRegister = () => setLoggedIn(true);
+    const onLogin = () => setAuthenticated(true);
+    const onLogout = () => setAuthenticated(false);
+    const onRegister = () => setAuthenticated(true);
     window.addEventListener("login", onLogin);
     window.addEventListener("logout", onLogout);
     window.addEventListener("register", onRegister);
@@ -29,7 +27,7 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
       window.removeEventListener("logout", onLogout);
       window.removeEventListener("register", onRegister);
     };
-  }, []);
+  }, [setAuthenticated]);
 
   const links = useMemo(() => {
     if (loggedIn) {
@@ -79,13 +77,13 @@ export default function Navbar({ isLoggedIn }: NavbarProps) {
           {loggedIn && (
             <motion.button
               className={getButtonStyle("outline")}
-              onClick={async () => {
+                onClick={async () => {
                 await fetch("http://localhost:4000/api/auth/logout", {
                   method: "POST",
                   credentials: "include",
                 });
 
-                setLoggedIn(false); 
+                logoutStore();
                 router.replace("/");
               }}
             >

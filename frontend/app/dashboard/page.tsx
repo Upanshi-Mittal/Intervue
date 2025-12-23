@@ -1,16 +1,24 @@
+"use client"
 import Image from "next/image";
 import { Settings, FileText, Play } from "lucide-react";
-// import { useEffect } from "react";
+import { useUser } from '../../hooks/useUser';
 
 export default function DashboardProfile() {
+  const { data: user, isLoading, error } = useUser();
 
+  if (isLoading) {
+    return <div>Loading user data...</div>;
+  }
 
-  // useEffect(() => {
-  //   console.log("DashboardProfile mounted");
- 
+  if (error) {
+    return <div>Error loading user: {error.message}</div>;
+  }
 
+  if (!user || !user.name) {
+    return <div>No user data available</div>;
+  }
 
-  // }, []);
+  console.log('DashboardProfile user data:', user);
    
 
   return (
@@ -21,7 +29,7 @@ export default function DashboardProfile() {
           {/* Avatar */}
           <div className="relative h-40 w-40 rounded-full overflow-hidden border">
             <Image
-              src="https://avatars.githubusercontent.com/u/1?v=4"
+              src="https://imgs.search.brave.com/5LcPZHHABtFumbI-buPjW-U0buNcqE-R2eKKeh6vWgQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tZWRp/YS5pc3RvY2twaG90/by5jb20vaWQvMjE3/MTM4MjYzMy92ZWN0/b3IvdXNlci1wcm9m/aWxlLWljb24tYW5v/bnltb3VzLXBlcnNv/bi1zeW1ib2wtYmxh/bmstYXZhdGFyLWdy/YXBoaWMtdmVjdG9y/LWlsbHVzdHJhdGlv/bi5qcGc_cz02MTJ4/NjEyJnc9MCZrPTIw/JmM9WndPRjZOZk9S/MHpoWUM0NHhPWDA2/cnlJUEFVaER2QWFq/clBzYVo2djEtdz0"
               alt="User avatar"
               fill
               unoptimized
@@ -32,7 +40,7 @@ export default function DashboardProfile() {
           {/* User Info */}
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold">Orange</h1>
+              <h1 className="text-2xl font-semibold">{user.name}</h1>
               <button className="rounded-md border px-3 py-1 text-sm hover:bg-neutral-100 transition">
                 Edit profile
               </button>
