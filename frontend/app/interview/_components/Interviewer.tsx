@@ -36,8 +36,6 @@ export default function Interviewer() {
           timer: Math.random() * 4 + 2,
           duration: 0,
         };
-
-        console.log("✅ Blink connected to Wolf3D_Head");
       }
     });
   }, [scene]);
@@ -47,7 +45,6 @@ export default function Interviewer() {
 
     const t = state.clock.getElapsedTime();
 
-    // 🫁 breathing
     group.current.position.y = -2.2 + Math.sin(t * 1.1) * 0.015;
 
     group.current.rotation.y = Math.sin(t * 0.5) * 0.02;
