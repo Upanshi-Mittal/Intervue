@@ -32,6 +32,7 @@ app.get("/api/user/me", requireAuth, (req, res) => {
   }
   res.json({ userId: req.user.userId });
 });
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
