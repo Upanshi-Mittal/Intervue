@@ -15,18 +15,25 @@ export const useInitAuth = () => {
     if (isInitialized) return;
 
     const initAuth = async () => {
-      try {
-        const user = await apiClient.getMe();
-        setAuthenticated(true);
-        // Populate React Query cache with user data
-        queryClient.setQueryData(['user', 'me'], user);
-      } catch (error) {
-        setAuthenticated(false);
-        queryClient.removeQueries({ queryKey: ['user', 'me'] });
-      } finally {
-        setInitialized(true);
-      }
-    };
+  try {
+    // Check token first (e.g., from cookies or store)
+    const token = useAuthStore.getState().token; // or document.cookie
+    if (!token) {
+      setAuthenticated(false);
+      setInitialized(true);
+      return;
+    }
+    const user = await apiClient.getMe();
+    setAuthenticated(true);
+    queryClient.setQueryData(['user', 'me'], user);
+  } catch (error) {
+    setAuthenticated(false);
+    queryClient.removeQueries({ queryKey: ['user', 'me'] });
+  } finally {
+    setInitialized(true);
+  }
+};
+
 
     initAuth();
   }, [isInitialized, setInitialized, setAuthenticated, queryClient]);

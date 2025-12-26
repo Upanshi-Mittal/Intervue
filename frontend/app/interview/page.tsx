@@ -99,6 +99,16 @@ import Interviewer from "./_components/Interviewer";
 // }
 
 // Camera Feed Component
+
+function speakStream(text: string) {
+  const audio = new Audio(
+    `http://localhost:8000/tts/stream?text=${encodeURIComponent(text)}`
+  );
+  audio.play().catch(err => {
+    console.error("Audio play failed:", err);
+  });
+}
+
 function CameraFeed({ active, videoRef }: { active: boolean; videoRef: React.RefObject<HTMLVideoElement> }) {
   useEffect(() => {
     if (active && videoRef.current) {
@@ -137,8 +147,9 @@ export default function InterviewPage() {
   const [callDuration, setCallDuration] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const audioChunksRef = useRef<Blob[]>([]);
+
 
   // Timer for call duration
   useEffect(() => {
@@ -158,52 +169,89 @@ export default function InterviewPage() {
   };
 
   const startInterview = useCallback(async () => {
-    setSessionId("demo-session");
-    setQuestion("Tell me about yourself and your experience.");
-    setCameraOn(true);
-    setInterviewStarted(true);
-    speak("Tell me about yourself and your experience.");
-  }, []);
+  const res = await fetch("http://localhost:8000/start-interview/Upanshi-Mittal");
+  const data = await res.json();
+
+  setSessionId(data.session_id);
+  setQuestion(data.question);
+
+  setCameraOn(true);
+  setInterviewStarted(true);
+
+  speakStream(data.question); // interviewer speaks
+}, []);
+
 
   const startRecording = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      mediaRecorder.ondataavailable = (e) => {
-        audioChunksRef.current.push(e.data);
-      };
+    const mediaRecorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm",
+    });
 
-      mediaRecorder.start();
-      setRecording(true);
-    } catch (err) {
-      console.error("Failed to start recording", err);
-    }
-  }, []);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (e) => {
+      audioChunksRef.current.push(e.data);
+    };
+
+    mediaRecorder.start();
+    setRecording(true);
+  } catch (err) {
+    console.error("Failed to start recording", err);
+  }
+}, []);
+
 
   const stopRecording = useCallback(async () => {
-    if (!mediaRecorderRef.current || !sessionId || !recording) return;
+  if (!mediaRecorderRef.current || !recording) return;
 
-    mediaRecorderRef.current.stop();
-    setRecording(false);
+  mediaRecorderRef.current.stop();
+  setRecording(false);
 
-    mediaRecorderRef.current.onstop = async () => {
-      mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-      
-      // Simulate next question
-      setTimeout(() => {
-        const nextQ = "What are your greatest strengths?";
-        setQuestion(nextQ);
-        speak(nextQ);
-      }, 1000);
-    };
-  }, [sessionId, recording]);
+  mediaRecorderRef.current.onstop = async () => {
+    mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+
+    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    audioChunksRef.current = [];
+
+    const formData = new FormData();
+    formData.append("audio", audioBlob);
+
+    const res = await fetch("http://localhost:8000/stt/live", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await res.json();
+    console.log("LIVE STT:", data.text);
+
+    const answerForm = new FormData();
+answerForm.append("session_id", sessionId!);   // VERY IMPORTANT
+answerForm.append("answer", data.text);        // STT text
+answerForm.append("metrics", JSON.stringify({}));
+
+const res2 = await fetch("http://localhost:8000/answer", {
+  method: "POST",
+  body: answerForm,
+});
+
+const result = await res2.json();
+
+console.log("AI NEXT QUESTION:", result.next_question);
+
+// 🔥 UPDATE UI WITH AI QUESTION
+setQuestion(result.next_question);
+speakStream(result.next_question);
+  };
+}, [recording]);
+
+
 
   const handleStartInterview = () => {
     startInterview();
-    startRecording();
   };
 
   const handleEndInterview = () => {
