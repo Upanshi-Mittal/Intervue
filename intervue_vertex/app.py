@@ -1,26 +1,25 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-import json
+from fastapi import FastAPI, Form, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import json
+from pydantic import BaseModel
 load_dotenv()
-from services.github_parser import fetch_github_profile
+
+from services.vertex_wrapper import vertex_speak
 from services.elevenlab_tts import text_to_speech
 from services.session_manager import (
     start_session,
+    add_message,
     get_session,
-    update_session,
     end_session
 )
-from services.vertex_wrapper import evaluate_answer
+from services.github_parser import fetch_github_profile
+from services.context_builder import build_candidate_context
 from services.emotion import text_emotion, audio_emotion
-from services.stt import speech_to_text
 from services.camera import analyze_camera_frame
-from services.report import make_report
+from services.elevenlab_stt import speech_to_text
 
 app = FastAPI()
-MAX_QUESTIONS = 6
-from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,20 +29,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class StartResponse(BaseModel):
+    session_id: str
+    question: str
+
+class AnswerRequest(BaseModel):
+    session_id: str
+    answer: str
+    skill: str
+    project: str | None = None
+
+# ---------- TTS ----------
+from fastapi import Query
+
+@app.get("/tts")
+def tts(text: str = Query(...)):
+    return text_to_speech(text)
+
+# ---------- CAMERA ----------
 @app.post("/camera/analyze")
-async def camera_analyze(frame: UploadFile = File(...)):
+async def camera(frame: UploadFile = File(...)):
     return await analyze_camera_frame(frame)
 
-@app.get("/")
-def home():
-    return {"status": "backend running"}
-
-class GithubRequest(BaseModel):
-    username: str
-
-@app.post("/parse-github")
-def parse_github(data: GithubRequest):
-    return fetch_github_profile(data.username)
+# ---------- START INTERVIEW ----------
+import uuid
 
 @app.get("/start-interview/{username}")
 def start_interview(username: str):
@@ -51,121 +60,157 @@ def start_interview(username: str):
     if "error" in profile:
         return profile
 
-    skills = profile.get("skills", [])
-    projects = profile.get("top_projects", [])
+    github_context = build_candidate_context(profile)
 
-    if not skills:
-        return {"error": "No skills detected"}
+    greeting_prompt = f"""
+You are a friendly but professional technical interviewer.
 
-    skill = skills[0]
-    project = projects[0]["name"] if projects else None
+Candidate context:
+{github_context}
 
-    question = (
-        f"Tell me about your {skill} project '{project}'."
-        if project else
-        f"Tell me about your experience with {skill}."
+Start the interview.
+Greet the candidate naturally.
+Explain interview flow briefly.
+Do not ask technical questions yet.
+"""
+
+    greeting = vertex_speak(greeting_prompt)
+
+    # 🔑 ALWAYS create a session_id
+    session_id = str(uuid.uuid4())
+
+    # 🧠 Store everything needed for the interview
+    start_session(
+        session_id=session_id,
+        github_context=github_context,
+        skill="Frontend / Fullstack",   # can be dynamic later
+        project="AI Interviewer",
+        first_message=greeting["text"]
     )
 
-    start_session(username, skill, project, question)
-
     return {
-        "session_id":username,
-        "question": question,
-        "skill_focus": skill,
-        "project": project
+        "session_id": session_id,
+        "question": greeting["text"],
+        "tts_url": greeting["tts_url"]
     }
 
-@app.post("/speak")
-def speak(text: str = Form(...)):
-    audio_bytes = text_to_speech(text)
-    return StreamingResponse(iter([audio_bytes]), media_type="audio/mpeg")
+
+# ---------- ANSWER ----------
+from services.vertex_wrapper import evaluate_answer
 
 @app.post("/answer")
-async def answer_api(
-    username: str = Form(...),
+async def answer(
+    session_id: str = Form(...),
     answer: str | None = Form(None),
-    file: UploadFile | None = File(None),
-    metrics: str | None = Form(None)
+    metrics: str | None = Form(None),
+    file: UploadFile | None = File(None)
 ):
-    print("🔥 /answer HIT")
-    session = get_session(username)
+    session = get_session(session_id)
     if not session:
-        return {"error": "No active interview session"}
+        raise HTTPException(status_code=400, detail="No active session")
 
-    # 🎥 Camera metrics
-    camera_metrics = None
-    if metrics:
-        try:
-            camera_metrics = json.loads(metrics)
-        except:
-            camera_metrics = {"error": "invalid_metrics"}
-
-    # 🎤 Audio / text
     transcript = answer or ""
     audio_em = None
 
     if file:
         audio_bytes = await file.read()
-        transcript = speech_to_text(audio_bytes) or ""
+        transcript = speech_to_text(audio_bytes)
         audio_em = audio_emotion(audio_bytes)
 
-    # 🧠 Text emotion
     text_em = text_emotion(transcript)
+    camera_metrics = json.loads(metrics) if metrics else {}
 
-    # 🤖 LLM evaluation
-    eval_data = evaluate_answer(
+    # store answer
+    add_message(
+        session_id,
+        "candidate",
         transcript,
-        session["skill"],
-        session["project"]
-    )
-
-    # 🧠 Update session
-    update_session(
-        username=username,
-        answer=transcript,
-        evaluation=eval_data,
-        text_em=text_em,
-        audio_em=audio_em,
+        text_emotion=text_em,
+        audio_emotion=audio_em,
         camera_metrics=camera_metrics
     )
 
-    # 🏁 End interview
-    if session["count"] >= MAX_QUESTIONS:
-        end_session(username)
-        return {
-            "status": "finished",
-            "report": make_report(session)
-        }
-
-    # ❓ Next question
-    next_question = eval_data.get(
-        "next_question",
-        "Can you elaborate on that?"
+    # 🔥 CORE AI BRAIN
+    result = evaluate_answer(
+        answer=transcript,
+        skill=session["skill"],
+        project=session.get("project"),
+        github_summary=session["github_context"],
+        camera_metrics=camera_metrics,
+        audio_emotion=audio_em,
+        text_emotion=text_em
     )
 
+    next_q = result["next_question"]
+
+    add_message(session_id, "interviewer", next_q)
+
     return {
-        "status": "ongoing",
-        "evaluation": eval_data,
-        "text_emotion": text_em,
-        "audio_emotion": audio_em,
-        "next_question": next_question
+        "evaluation": result,
+        "next_question": next_q
     }
 
-import io
-@app.post("/speak")
-def speak(text: str = Form(...)):
-    audio_bytes = text_to_speech(text)
 
-    print("🔊 Audio size:", len(audio_bytes))
+@app.get("/test-tts")
+def test_tts():
+    return text_to_speech("Hello, this is a live TTS test")
 
-    if not audio_bytes:
-        return {"error": "TTS failed"}
+@app.post("/stt/live")
+async def live_stt(audio: UploadFile = File(...)):
+    audio_bytes = await audio.read()
 
+    text = speech_to_text(audio_bytes)
+
+    return {
+        "text": text
+    }
+
+from fastapi.responses import StreamingResponse
+from services.elevenlab_tts import stream_tts
+
+@app.get("/tts/stream")
+def tts_stream(text: str):
     return StreamingResponse(
-        io.BytesIO(audio_bytes),
+        stream_tts(text),
         media_type="audio/mpeg"
     )
 
+from services.emotion import text_emotion, audio_emotion
+'''
+@app.post("/interview/answer")
+async def interview_answer(audio: UploadFile = File(...)):
+    audio_bytes = await audio.read()
 
+    # 1️⃣ Speech → Text
+    user_text = speech_to_text(audio_bytes)
 
+    # 2️⃣ Emotion analysis
+    text_em = text_emotion(user_text)
+    audio_em = audio_emotion(audio_bytes)
 
+    # 3️⃣ Fuse emotions (simple, explainable)
+    if audio_em["score"] > 0.6 and text_em["emotion"] == "happy":
+        final_emotion = "confident"
+    elif audio_em["score"] < 0.4 or text_em["emotion"] == "concerned":
+        final_emotion = "nervous"
+    else:
+        final_emotion = "neutral"
+
+    # 4️⃣ Adaptive question
+    if final_emotion == "nervous":
+        next_question = "No worries. Can you explain a project you enjoyed working on?"
+    elif final_emotion == "confident":
+        next_question = "Great. Can you explain a challenging technical decision you made?"
+    else:
+        next_question = "Can you tell me more about your technical experience?"
+
+    return {
+        "user_text": user_text,
+        "emotion": {
+            "final": final_emotion,
+            "text": text_em,
+            "audio": audio_em
+        },
+        "next_question": next_question
+    }
+'''

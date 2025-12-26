@@ -2,82 +2,51 @@ import time
 
 interview_sessions = {}
 
-def start_session(username, skill, project, first_question):
-    interview_sessions[username] = {
-        "username": username,
+sessions = {}
+
+def start_session(session_id, github_context, skill, project, first_message):
+    interview_sessions[session_id] = {
+        "github_context": github_context,
         "skill": skill,
         "project": project,
-        "turns": [
+        "messages": [
             {
-                "question": first_question,
-                "answer": None,
-                "evaluation": {},
-                "text_emotion": {},
-                "audio_emotion": {},
-                "camera_metrics": [],
-                "timestamp": time.time()
+                "role": "interviewer",
+                "content": first_message
             }
-        ],
-        "completed": False,
-        "count": 0,
-        "started_at": time.time(),
-        "ended_at": None
+        ]
     }
 
-def update_camera_metrics(username, metrics):
-    session = interview_sessions.get(username)
-    if not session:
-        return
 
-    current_turn = session["turns"][-1]
-    current_turn["camera_metrics"].append({
-        **metrics,
-        "timestamp": time.time()
-    })
-
-
-def update_session(
+def add_message(
     username,
-    question,
-    answer,
-    evaluation=None,
-    text_em=None,
-    audio_em=None,
+    role,
+    text,
+    text_emotion=None,
+    audio_emotion=None,
+    camera_metrics=None
 ):
     session = interview_sessions.get(username)
     if not session:
         return
 
-    current_turn = session["turns"][-1]
-    current_turn["answer"] = answer
-    current_turn["evaluation"] = evaluation or {}
-    current_turn["text_emotion"] = text_em or {}
-    current_turn["audio_emotion"] = audio_em or {}
-    
-    session["turns"].append({
-        "question": question,
-        "answer": answer,
-        "evaluation": evaluation or {},
-        "text_emotion": text_em or {},
-        "audio_emotion": audio_em or {},
-        "camera_metrics": [],
+    session["messages"].append({
+        "role": role,
+        "text": text,
+        "text_emotion": text_emotion or {},
+        "audio_emotion": audio_emotion or {},
+        "camera_metrics": camera_metrics or {},
         "timestamp": time.time()
     })
 
-    session["count"] += 1
-
+    if role == "candidate":
+        session["count"] += 1
 
 def get_session(username):
     return interview_sessions.get(username)
-
 
 def end_session(username):
     session = interview_sessions.get(username)
     if session:
         session["completed"] = True
         session["ended_at"] = time.time()
-    return session
-
-
-def reset_session(username):
-    interview_sessions.pop(username, None)
