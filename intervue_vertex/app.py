@@ -133,32 +133,26 @@ async def answer(
     # 🔥 CORE AI BRAIN
     result = evaluate_answer(
         answer=transcript,
-        skill=session["skill"],
-        project=session.get("project"),
-        github_summary=session["github_context"],
-        camera_metrics=camera_metrics,
-        audio_emotion=audio_em,
-        text_emotion=text_em
+        evaluation=eval_data,
+        text_em=text_em,
+        audio_em=audio_em,
+        camera_metrics=camera_metrics
     )
 
-    next_q = result["next_question"]
+    # 🏁 End interview
+    if session["count"] >= MAX_QUESTIONS:
+        end_session(username)
+        return {
+            "status": "finished",
+            "report": make_report(session)
+        }
 
-    add_message(session_id, "interviewer", next_q)
+    # ❓ Next question
+    next_question = eval_data.get(
+        "next_question",
+        "Can you elaborate on that?"
+    )
 
-    return {
-        "evaluation": result,
-        "next_question": next_q
-    }
-
-
-@app.get("/test-tts")
-def test_tts():
-    return text_to_speech("Hello, this is a live TTS test")
-
-@app.post("/stt/live")
-async def live_stt(audio: UploadFile = File(...)):
-    audio_bytes = await audio.read()
-    text = speech_to_text(audio_bytes)
     return {
         "text": text
     }
