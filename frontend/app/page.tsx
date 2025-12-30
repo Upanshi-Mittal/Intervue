@@ -7,7 +7,6 @@ import * as THREE from 'three';
 import { motion } from 'motion/react';
 import { ArrowRight, Play, Globe, Cpu } from 'lucide-react';
 
-import Link from 'next/link';
 
 const vertexShader = `
   varying vec2 vUv;
@@ -156,7 +155,7 @@ export default function CinematicLanding() {
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
                     transition={{ duration: 1, ease: [0.33, 1, 0.68, 1], delay: 0.3 }}
-                    className="text-7xl md:text-9xl font-black text-white uppercase tracking-tighter leading-[0.85] mix-blend-overlay"
+                    className="text-7xl md:text-9xl font-black  uppercase tracking-tighter leading-[0.85] mix-blend-overlay"
                 >
                     Intervue
                 </motion.h1>
@@ -177,14 +176,14 @@ export default function CinematicLanding() {
                 transition={{ delay: 1.2 }}
                 className="flex gap-4 pointer-events-auto"
             >
-                <button className="group px-8 py-4 bg-white text-black font-bold rounded-full flex items-center gap-3 hover:scale-105 transition-transform">
+                <a href="/register" className="group px-8 py-4 bg-white text-black font-bold rounded-full flex items-center gap-3 hover:scale-105 transition-transform cursor-pointer">
                     <span>Get Interview-Ready</span>
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-                <button className="px-8 py-4 border border-white/30 text-white rounded-full hover:bg-white/10 backdrop-blur-sm transition-colors flex items-center gap-3">
+                </a>
+                <a href="/sample-report" className="px-8 py-4 border border-white/30 text-white rounded-full hover:bg-white/10 backdrop-blur-sm transition-colors flex items-center gap-3 cursor-pointer">
                     <Play className="w-4 h-4 fill-current" />
                     <span>View Sample Report</span>
-                </button>
+                </a>
             </motion.div>
 
         </div>
@@ -236,7 +235,7 @@ export default function CinematicLanding() {
       <p className="text-sm font-medium uppercase tracking-[0.2em] text-neutral-400">
         What we offer
       </p>
-      <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+      <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
         Interview prep that judges you like a real interviewer.
       </h2>
       <p className="text-sm sm:text-base text-neutral-400">
@@ -261,7 +260,7 @@ export default function CinematicLanding() {
       </div>
 
       {/* Light card */}
-      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-neutral-50/95 p-6 sm:p-7 text-neutral-900">
+      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-foreground p-6 sm:p-7 text-neutral-900">
         <div className="absolute inset-px rounded-2xl border border-black/5 opacity-0 transition-opacity group-hover:opacity-100" />
         <h3 className="text-base font-medium sm:text-lg">
           Conversation & delivery
@@ -284,8 +283,8 @@ export default function CinematicLanding() {
         </p>
       </div>
 
-      {/* Extra cards if you want 4–6 items */}
-      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-neutral-50/95 p-6 sm:p-7 text-neutral-900">
+
+      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-foreground  p-6 sm:p-7 text-neutral-900">
         <h3 className="text-base font-medium sm:text-lg">
           Resume vs reality check
         </h3>
@@ -305,7 +304,7 @@ export default function CinematicLanding() {
         </p>
       </div>
 
-      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-neutral-50/95 p-6 sm:p-7 text-neutral-900">
+      <div className="group relative overflow-hidden rounded-2xl border border-white/10 bg-foreground  p-6 sm:p-7 text-neutral-900">
   <div className="absolute inset-px rounded-2xl border border-white/5 opacity-0 transition-opacity group-hover:opacity-100" />
   <h3 className="text-base font-medium sm:text-lg">
     Personalized improvement path
