@@ -6,6 +6,10 @@ export interface User {
   onboardingCompleted?: boolean;
   avatar?: string;
   role?: 'user' | 'admin';
+  // Analytics fields
+  interviews?: number;
+  averageScore?: number; // 0-10 scale
+  reports?: number;
 }
 
 export interface LoginCredentials {

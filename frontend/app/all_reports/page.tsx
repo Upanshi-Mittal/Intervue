@@ -34,7 +34,8 @@ export default function AllReportsPage() {
   useEffect(() => {
     async function fetchReports() {
       try {
-        const res = await fetch("/me/reports", {
+        console.log("Fetching reports...");
+        const res = await fetch("/api/user/reports", {
           credentials: "include",
         });
 

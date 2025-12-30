@@ -44,7 +44,7 @@ export default function Navbar() {
   }, [loggedIn]);
 
   return (
-    <div className="w-full fixed top-5 z-50 flex justify-center pointer-events-none">
+    <div className="w-full fixed top-5 z-999 flex justify-center pointer-events-none">
       <header
         id="nav"
         className="relative max-w-6xl p-6 transition-all rounded-md w-full flex justify-between items-center pointer-events-auto"

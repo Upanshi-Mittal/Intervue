@@ -62,7 +62,7 @@ export default function ReportDetailPage() {
       if (!reportId) return;
 
       try {
-        const res = await fetch(`/me/report/${reportId}`, {
+        const res = await fetch(`/api/user/report/${reportId}`, {
           credentials: "include",
         });
 

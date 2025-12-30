@@ -4,8 +4,10 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes";
+import reportRoutes from "./routes/reportRoutes";
 import connectDB from "./utils/connectDB";
 import { requireAuth } from "./middleware/auth";
+import { getAllReports, getReportById } from "./controllers/reportController";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -30,6 +32,16 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/reports", reportRoutes);
+
+// User reports endpoints
+app.get("/api/user/reports", requireAuth, getAllReports);
+app.get("/api/user/report/:id", requireAuth, (req, res) => {
+  // Map :id to :reportId for the controller
+  req.params.reportId = req.params.id;
+  return getReportById(req, res);
+});
+
 app.get("/api/user/me", requireAuth, async (req, res) => {
   try {
     console.log('[/api/user/me] Cookies received:', req.cookies);

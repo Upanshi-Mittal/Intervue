@@ -15,25 +15,20 @@ export const useInitAuth = () => {
     if (isInitialized) return;
 
     const initAuth = async () => {
-  try {
-    // Check token first (e.g., from cookies or store)
-    const token = useAuthStore.getState().token; // or document.cookie
-    if (!token) {
-      setAuthenticated(false);
-      setInitialized(true);
-      return;
-    }
-    const user = await apiClient.getMe();
-    setAuthenticated(true);
-    queryClient.setQueryData(['user', 'me'], user);
-  } catch (error) {
-    setAuthenticated(false);
-    queryClient.removeQueries({ queryKey: ['user', 'me'] });
-  } finally {
-    setInitialized(true);
-  }
-};
-
+      try {
+        // Always attempt to fetch current user from backend using httpOnly cookie.
+        // Don't rely on a client-side token (not accessible when httpOnly).
+        const user = await apiClient.getMe();
+        setAuthenticated(true);
+        queryClient.setQueryData(['user', 'me'], user);
+      } catch (error) {
+        // Not authenticated or error — ensure state is unauthenticated
+        setAuthenticated(false);
+        queryClient.removeQueries({ queryKey: ['user', 'me'] });
+      } finally {
+        setInitialized(true);
+      }
+    };
 
     initAuth();
   }, [isInitialized, setInitialized, setAuthenticated, queryClient]);

@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { Settings, FileText, Play } from "lucide-react";
 import { useUser } from '../../hooks/useUser';
-
+import Link from "next/link";
 export default function DashboardProfile() {
   const { data: user, isLoading, error } = useUser();
 
@@ -22,7 +22,7 @@ export default function DashboardProfile() {
    
 
   return (
-    <div className="max-w-4xl mx-auto px-6 pt-50">
+    <div className="max-w-4xl min-h-screen mx-auto px-6 pt-50">
       {/* Header */}
       <section className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-6">
@@ -41,24 +41,29 @@ export default function DashboardProfile() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold">{user.name}</h1>
-              <button className="rounded-md border px-3 py-1 text-sm hover:bg-neutral-100 transition">
+              <button  className="cursor-not-allowed! rounded-md h-full border px-3 py-1 text-sm hover:bg-neutral-100/20 transition">
                 Edit profile
               </button>
-              <button className="rounded-md border p-2 hover:bg-neutral-100 transition">
+              <button className="cursor-not-allowed! rounded-md border p-2 hover:bg-neutral-100/20 transition">
                 <Settings size={16} />
               </button>
             </div>
 
-            {/* Stats */}
+            {/* Stats (real data) */}
             <div className="flex gap-6 mt-3 text-sm">
               <span>
-                <strong>12</strong> interviews
+                <strong>{user.interviews ?? 0}</strong> interviews
               </span>
               <span>
-                <strong>7</strong> reports
+                <strong>{user.reports ?? 0}</strong> reports
               </span>
               <span>
-                <strong>85%</strong> avg score
+                <strong>
+                  {typeof user.averageScore === 'number'
+                    ? `${Math.round((user.averageScore || 0) * 10)}%`
+                    : '—'}
+                </strong>
+                {' '}avg score
               </span>
             </div>
 
@@ -77,7 +82,7 @@ export default function DashboardProfile() {
       {/* CTA Section */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Start Interview */}
-        <button className="group relative rounded-xl border p-6 text-left hover:bg-neutral-50 transition">
+       <Link href="/interview"><button  className="group relative rounded-xl border p-6 text-left hover:bg-neutral-50/10 transition">
           <div className="flex items-center gap-3">
             <Play className="" size={20} />
             <h3 className="text-lg font-semibold">
@@ -90,10 +95,10 @@ export default function DashboardProfile() {
           <span className="absolute right-6 bottom-6 text-sm opacity-0 group-hover:opacity-100 transition">
             →
           </span>
-        </button>
+        </button></Link> 
 
         {/* View Reports */}
-        <button className="group relative rounded-xl border p-6 text-left hover:bg-neutral-50 transition">
+        <Link href="/all_reports"><button className="group relative rounded-xl border p-6 text-left hover:bg-neutral-50/10 transition">
           <div className="flex items-center gap-3">
             <FileText size={20} />
             <h3 className="text-lg font-semibold">
@@ -106,10 +111,9 @@ export default function DashboardProfile() {
           <span className="absolute right-6 bottom-6 text-sm opacity-0 group-hover:opacity-100 transition">
             →
           </span>
-        </button>
+        </button></Link>
 
-        {/* Settings */}
-        <button className="group relative rounded-xl border p-6 text-left hover:bg-neutral-50 transition">
+        <button className="cursor-not-allowed! group relative rounded-xl border p-6 text-left hover:bg-neutral-50/10 transition">
           <div className="flex items-center gap-3">
             <Settings size={20} />
             <h3 className="text-lg font-semibold">
