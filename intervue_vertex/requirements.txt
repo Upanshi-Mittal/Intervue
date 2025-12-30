@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+requests
+httpx
+python-multipart
+
+
+google-cloud-aiplatform
+google-generativeai
+vertexai
+
+
+elevenlabs
+soundfile
+opencv-python

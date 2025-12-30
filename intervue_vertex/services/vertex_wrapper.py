@@ -90,3 +90,15 @@ Return ONLY valid JSON:
             "next_question": "Could you explain that in a bit more detail?",
             "interviewer_tone": "neutral"
         }
+def vertex_speak(text: str):
+    """
+    TEMP: placeholder TTS
+    Replace later with real Vertex TTS
+    """
+    model = get_model()
+    response = model.generate_content(text)
+
+    return {
+        "text": response.text.strip(),
+        "tts_url": None
+    }

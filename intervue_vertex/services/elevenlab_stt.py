@@ -11,11 +11,11 @@ def speech_to_text(audio_bytes: bytes) -> str:
         wav_bytes = webm_to_wav(audio_bytes)
 
         result = client.speech_to_text.convert(
-            file=(wav_bytes, "audio.wav"),
+            file=("audio.wav",wav_bytes),
             model_id="scribe_v1",
         )
 
-        return result.get("text", "").strip()
+        return result.text.strip()
 
     except Exception as e:
         print("ElevenLabs STT failed:", e)
