@@ -108,4 +108,7 @@ const Interviewer = forwardRef<InterviewerControls>((_, ref) => {
   );
 });
 
+// Add a displayName for React devtools / lint rules
+(Interviewer as any).displayName = "Interviewer";
+
 export default Interviewer;

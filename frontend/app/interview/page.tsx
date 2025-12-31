@@ -1,11 +1,11 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, useGLTF, OrbitControls } from "@react-three/drei";
+import { Canvas  } from "@react-three/fiber";
+import { Environment } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Mic, MicOff, Video, VideoOff, Phone, Settings, MoreVertical, User } from "lucide-react";
-import * as THREE from "three";
+
 import Interviewer from "./_components/Interviewer";
 // 3D Interviewer Avatar Component
 // function InterviewerAvatar() {
