@@ -158,9 +158,7 @@ def test_tts():
 @app.post("/stt/live")
 async def live_stt(audio: UploadFile = File(...)):
     audio_bytes = await audio.read()
-
     text = speech_to_text(audio_bytes)
-
     return {
         "text": text
     }
