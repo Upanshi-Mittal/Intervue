@@ -2,8 +2,6 @@ import time
 
 interview_sessions = {}
 
-sessions = {}
-
 def start_session(session_id, github_context, skill, project, first_message):
     interview_sessions[session_id] = {
         "github_context": github_context,
@@ -12,21 +10,23 @@ def start_session(session_id, github_context, skill, project, first_message):
         "messages": [
             {
                 "role": "interviewer",
-                "content": first_message
+                "text": first_message,
+                "timestamp": time.time()
             }
-        ]
+        ],
+        "count": 0,
+        "started_at": time.time()
     }
 
-
 def add_message(
-    username,
+    session_id,
     role,
     text,
     text_emotion=None,
     audio_emotion=None,
     camera_metrics=None
 ):
-    session = interview_sessions.get(username)
+    session = interview_sessions.get(session_id)
     if not session:
         return
 
@@ -42,11 +42,11 @@ def add_message(
     if role == "candidate":
         session["count"] += 1
 
-def get_session(username):
-    return interview_sessions.get(username)
+def get_session(session_id):
+    return interview_sessions.get(session_id)
 
-def end_session(username):
-    session = interview_sessions.get(username)
+def end_session(session_id):
+    session = interview_sessions.get(session_id)
     if session:
         session["completed"] = True
         session["ended_at"] = time.time()

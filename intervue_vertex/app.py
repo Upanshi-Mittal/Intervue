@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Form, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-import json
+import json,uuid
 from pydantic import BaseModel
 load_dotenv()
 
@@ -58,7 +58,7 @@ import uuid
 def start_interview(username: str):
     profile = fetch_github_profile(username)
     if "error" in profile:
-        return profile
+        return HTTPException(status_code=400, detail="GitHub fetch failed")
 
     github_context = build_candidate_context(profile)
 
@@ -96,7 +96,6 @@ Do not ask technical questions yet.
 
 
 # ---------- ANSWER ----------
-from services.vertex_wrapper import evaluate_answer
 
 @app.post("/answer")
 async def answer(
@@ -112,44 +111,53 @@ async def answer(
     transcript = answer or ""
     audio_em = None
 
-    if file:
-        audio_bytes = await file.read()
-        transcript = speech_to_text(audio_bytes)
-        audio_em = audio_emotion(audio_bytes)
+    if not transcript.strip():
+        return {
+            "evaluation": None,
+            "next_question": "I couldn't hear that clearly. Could you please repeat?"
+        }
 
     text_em = text_emotion(transcript)
     camera_metrics = json.loads(metrics) if metrics else {}
 
-    # store answer
+    # store candidate answer
     add_message(
-        session_id,
-        "candidate",
-        transcript,
+        session_id=session_id,
+        role="candidate",
+        text=transcript,
         text_emotion=text_em,
         audio_emotion=audio_em,
         camera_metrics=camera_metrics
     )
 
-    # 🔥 CORE AI BRAIN
-    result = evaluate_answer(
-        answer=transcript,
-        skill=session["skill"],
-        project=session.get("project"),
-        github_summary=session["github_context"],
-        camera_metrics=camera_metrics,
-        audio_emotion=audio_em,
-        text_emotion=text_em
-    )
+    # 🔥 GEMINI / VERTEX CALL (ONLY ONCE)
+    try:
+        result = evaluate_answer(
+            answer=transcript,
+            skill=session["skill"],
+            project=session.get("project"),
+            github_summary=session["github_context"],
+            camera_metrics=camera_metrics,
+            audio_emotion=audio_em,
+            text_emotion=text_em
+        )
+    except Exception as e:
+        print("EVALUATION ERROR:", e)
+        return {
+            "evaluation": None,
+            "next_question": "Let's move on. Can you explain a recent project you worked on?"
+        }
 
-    next_q = result["next_question"]
+    next_q = result.get("next_question")
+    if not next_q:
+        next_q = "Can you explain that in more detail?"
 
-    add_message(session_id, "interviewer", next_q)
+    add_message(session_id=session_id, role="interviewer", text=next_q)
 
     return {
         "evaluation": result,
         "next_question": next_q
     }
-
 
 @app.get("/test-tts")
 def test_tts():
