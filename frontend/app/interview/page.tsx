@@ -15,10 +15,10 @@ import Interviewer from "./_components/Interviewer";
 //   // Animate the avatar
 //   useFrame((state) => {
 //     if (!meshRef.current) return;
-    
+
 //     // Gentle floating animation
 //     meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
-    
+
 //     // Subtle rotation
 //     meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
 //   });
@@ -42,7 +42,7 @@ import Interviewer from "./_components/Interviewer";
 //           metalness={0.2}
 //         />
 //       </mesh>
-      
+
 //       {/* Body */}
 //       <mesh position={[0, -0.2, 0]} castShadow>
 //         <capsuleGeometry args={[0.35, 0.8, 16, 32]} />
@@ -52,7 +52,7 @@ import Interviewer from "./_components/Interviewer";
 //           metalness={0.1}
 //         />
 //       </mesh>
-      
+
 //       {/* Eyes */}
 //       <mesh position={[-0.15, 0.55, 0.3]}>
 //         <sphereGeometry args={[0.05, 16, 16]} />
@@ -62,7 +62,7 @@ import Interviewer from "./_components/Interviewer";
 //         <sphereGeometry args={[0.05, 16, 16]} />
 //         <meshStandardMaterial color="#ffffff" />
 //       </mesh>
-      
+
 //       {/* Pupils */}
 //       <mesh position={[-0.15, 0.55, 0.35]}>
 //         <sphereGeometry args={[0.025, 16, 16]} />
@@ -72,7 +72,7 @@ import Interviewer from "./_components/Interviewer";
 //         <sphereGeometry args={[0.025, 16, 16]} />
 //         <meshStandardMaterial color="#1f2937" />
 //       </mesh>
-      
+
 //       {/* Mouth - animated when speaking */}
 //       <mesh 
 //         position={[0, 0.4, 0.35]} 
@@ -81,7 +81,7 @@ import Interviewer from "./_components/Interviewer";
 //         <sphereGeometry args={[0.08, 16, 16, 0, Math.PI]} />
 //         <meshStandardMaterial color="#ef4444" />
 //       </mesh>
-      
+
 //       {/* Arms */}
 //       <mesh position={[-0.5, -0.2, 0]} rotation={[0, 0, 0.3]} castShadow>
 //         <capsuleGeometry args={[0.1, 0.6, 8, 16]} />
@@ -91,7 +91,7 @@ import Interviewer from "./_components/Interviewer";
 //         <capsuleGeometry args={[0.1, 0.6, 8, 16]} />
 //         <meshStandardMaterial color="#6366f1" />
 //       </mesh>
-      
+
 //       {/* Glow effect */}
 //       <pointLight position={[0, 0.5, 0.5]} intensity={0.5} color="#8b5cf6" />
 //     </group>
@@ -120,7 +120,7 @@ function CameraFeed({ active, videoRef }: { active: boolean; videoRef: React.Ref
         })
         .catch(err => console.error("Camera error:", err));
     }
-    
+
     return () => {
       if (videoRef.current?.srcObject) {
         const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
@@ -147,14 +147,14 @@ export default function InterviewPage() {
   const [callDuration, setCallDuration] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
-const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-const audioChunksRef = useRef<Blob[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
 
   // Timer for call duration
   useEffect(() => {
     if (!interviewStarted) return;
-    
+
     const timer = setInterval(() => {
       setCallDuration(prev => prev + 1);
     }, 1000);
@@ -169,84 +169,95 @@ const audioChunksRef = useRef<Blob[]>([]);
   };
 
   const startInterview = useCallback(async () => {
-  const res = await fetch("http://localhost:8000/start-interview/Upanshi-Mittal");
-  const data = await res.json();
+    const res = await fetch("http://localhost:8000/start-interview/Upanshi-Mittal");
+    const data = await res.json();
 
-  setSessionId(data.session_id);
-  setQuestion(data.question);
+    setSessionId(data.session_id);
+    setQuestion(data.question);
 
-  setCameraOn(true);
-  setInterviewStarted(true);
+    setCameraOn(true);
+    setInterviewStarted(true);
 
-  speakStream(data.question); // interviewer speaks
-}, []);
+    speakStream(data.question); // interviewer speaks
+  }, []);
 
 
   const startRecording = useCallback(async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: "audio/webm",
-    });
+      const mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorderRef.current = mediaRecorder;
-    audioChunksRef.current = [];
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    mediaRecorder.ondataavailable = (e) => {
-      audioChunksRef.current.push(e.data);
-    };
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunksRef.current.push(e.data);
+      };
 
-    mediaRecorder.start();
-    setRecording(true);
-  } catch (err) {
-    console.error("Failed to start recording", err);
-  }
-}, []);
+      mediaRecorder.start();
+      setRecording(true);
+    } catch (err) {
+      console.error("Failed to start recording", err);
+    }
+  }, []);
 
 
   const stopRecording = useCallback(async () => {
-  if (!mediaRecorderRef.current || !recording) return;
+    if (!mediaRecorderRef.current || !recording) return;
 
-  mediaRecorderRef.current.stop();
-  setRecording(false);
+    mediaRecorderRef.current.stop();
+    setRecording(false);
 
-  mediaRecorderRef.current.onstop = async () => {
-    mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+    mediaRecorderRef.current.onstop = async () => {
+      mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
 
-    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-    audioChunksRef.current = [];
+      const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+      audioChunksRef.current = [];
 
-    const formData = new FormData();
-    formData.append("audio", audioBlob);
+      const formData = new FormData();
+      formData.append("audio", audioBlob);
 
-    const res = await fetch("http://localhost:8000/stt/live", {
-      method: "POST",
-      body: formData,
-    });
+      const res = await fetch("http://localhost:8000/stt/live", {
+        method: "POST",
+        body: formData,
+      });
 
-    const data = await res.json();
-    console.log("LIVE STT:", data.text);
+      const data = await res.json();
+      if (!data.text || data.text.trim() === "") {
+  console.warn("Empty STT text, skipping answer");
+  return;
+}
 
-    const answerForm = new FormData();
-answerForm.append("session_id", sessionId!);   // VERY IMPORTANT
-answerForm.append("answer", data.text);        // STT text
-answerForm.append("metrics", JSON.stringify({}));
+      console.log("LIVE STT:", data.text);
 
-const res2 = await fetch("http://localhost:8000/answer", {
-  method: "POST",
-  body: answerForm,
-});
+      const answerForm = new FormData();
+      answerForm.append("session_id", sessionId!);   // VERY IMPORTANT
+      answerForm.append("answer", data.text);        // STT text
+      answerForm.append("metrics", JSON.stringify({}));
+  const sttText = data.text; // jo STT se aa raha hai
 
-const result = await res2.json();
+  if (!sttText || !sttText.trim()) {
+    console.warn("Empty STT text, skipping answer");
+    return; // 👈 YAHI
+  }
+      const res2 = await fetch("http://localhost:8000/answer", {
+        method: "POST",
+        body: answerForm,
+      });
 
-console.log("AI NEXT QUESTION:", result.next_question);
+      const result = await res2.json();
 
-// 🔥 UPDATE UI WITH AI QUESTION
-setQuestion(result.next_question);
-speakStream(result.next_question);
-  };
-}, [recording]);
+      console.log("AI NEXT QUESTION:", result.next_question);
+
+      // 🔥 UPDATE UI WITH AI QUESTION
+      setQuestion(result.next_question);
+      if (result.next_question) {
+  speakStream(result.next_question);
+}
+
+    };
+  }, [recording]);
 
 
 
@@ -271,41 +282,41 @@ speakStream(result.next_question);
     <div className="relative h-screen w-full bg-gray-900 overflow-hidden">
       {/* Main Video Grid */}
       <div className="absolute inset-0 grid grid-cols-1 lg:grid-cols-2 gap-2 p-2">
-        
+
         {/* Interviewer Video (3D Avatar) */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl"
         >
-          <Canvas 
+          <Canvas
             camera={{ position: [0, -0.5, 3], fov: 20 }}
             shadows
           >
             <color attach="background" args={['#1f2937']} />
             <fog attach="fog" args={['#1f2937', 5, 15]} />
-            
+
             <ambientLight intensity={0.4} />
-            <directionalLight 
-              position={[5, 5, 5]} 
-              intensity={1} 
+            <directionalLight
+              position={[5, 5, 5]}
+              intensity={1}
               castShadow
               shadow-mapSize-width={1024}
               shadow-mapSize-height={1024}
             />
             <spotLight position={[0, 5, 0]} intensity={0.5} angle={0.6} penumbra={1} castShadow />
-            
+
             <Interviewer />
-            
+
             <Environment preset="city" />
-            
+
             {/* Floor */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
               <planeGeometry args={[10, 10]} />
               <meshStandardMaterial color="#111827" roughness={0.8} />
             </mesh>
           </Canvas>
-          
+
           {/* Interviewer Name Tag */}
           <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-lg px-3 py-2">
             <User className="w-4 h-4 text-white" />
@@ -320,7 +331,7 @@ speakStream(result.next_question);
         </motion.div>
 
         {/* Your Video Feed */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="relative bg-gray-800 rounded-2xl overflow-hidden shadow-2xl"
@@ -343,7 +354,7 @@ speakStream(result.next_question);
               </div>
             </div>
           )}
-          
+
           {/* Your Name Tag */}
           <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-md rounded-lg px-3 py-2">
             <User className="w-4 h-4 text-white" />
@@ -360,7 +371,7 @@ speakStream(result.next_question);
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
             <span className="text-white text-sm font-medium">{formatDuration(callDuration)}</span>
           </div>
-          
+
           {interviewStarted && (
             <div className="bg-black/40 backdrop-blur-md rounded-lg px-4 py-2">
               <span className="text-white text-sm">Technical Interview</span>
@@ -403,7 +414,7 @@ speakStream(result.next_question);
       {/* Bottom Control Bar */}
       <div className="absolute bottom-0 left-0 right-0 z-50 p-6 bg-gradient-to-t from-black/60 to-transparent">
         <div className="max-w-4xl mx-auto">
-          
+
           {!interviewStarted ? (
             <motion.div
               initial={{ y: 50, opacity: 0 }}
@@ -426,11 +437,10 @@ speakStream(result.next_question);
               {/* Mic Toggle */}
               <button
                 onClick={toggleMic}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
-                  micOn 
-                    ? 'bg-gray-700 hover:bg-gray-600' 
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${micOn
+                    ? 'bg-gray-700 hover:bg-gray-600'
                     : 'bg-red-600 hover:bg-red-500'
-                }`}
+                  }`}
               >
                 {micOn ? (
                   <Mic className="w-6 h-6 text-white" />
@@ -442,11 +452,10 @@ speakStream(result.next_question);
               {/* Camera Toggle */}
               <button
                 onClick={toggleCamera}
-                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${
-                  cameraOn 
-                    ? 'bg-gray-700 hover:bg-gray-600' 
+                className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg ${cameraOn
+                    ? 'bg-gray-700 hover:bg-gray-600'
                     : 'bg-red-600 hover:bg-red-500'
-                }`}
+                  }`}
               >
                 {cameraOn ? (
                   <Video className="w-6 h-6 text-white" />
@@ -458,11 +467,10 @@ speakStream(result.next_question);
               {/* Recording Toggle */}
               <button
                 onClick={recording ? stopRecording : startRecording}
-                className={`px-8 py-4 rounded-full text-white font-semibold transition-all shadow-lg ${
-                  recording 
-                    ? 'bg-blue-600/50 hover:bg-blue-500 animate-pulse' 
+                className={`px-8 py-4 rounded-full text-white font-semibold transition-all shadow-lg ${recording
+                    ? 'bg-blue-600/50 hover:bg-blue-500 animate-pulse'
                     : 'bg-green-500/70 hover:bg-green-500'
-                }`}
+                  }`}
               >
                 {recording ? '⏹️ Stop Answer' : '🎙️ Start Answer'}
               </button>
