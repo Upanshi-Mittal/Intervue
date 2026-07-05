@@ -1,5 +1,9 @@
 "use client";
 
+export function ClientDate({ date }: { date: string }) {
+  return <>{new Date(date).toLocaleString()}</>;
+}
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -76,7 +80,7 @@ export default function AllReportsPage() {
             <Link href={`/all_reports/${report.id}`}>
               <div className="font-medium">{report.title}</div>
               <div className="text-sm text-zinc-400">
-                {new Date(report.createdAt).toLocaleString()}
+                <ClientDate date={report.createdAt} />
               </div>
             </Link>
           </li>

@@ -1,24 +1,22 @@
 from fastapi import FastAPI, Form, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
-import json,uuid
-from pydantic import BaseModel
+import uuid, json, traceback
+
 load_dotenv()
 
-from services.vertex_wrapper import vertex_speak
-from services.elevenlab_tts import text_to_speech
-from services.session_manager import (
-    start_session,
-    add_message,
-    get_session,
-    end_session
-)
+# ===== SERVICES =====
+from services.gemini_client import gemini_generate
+from services.elevenlab_tts import stream_tts
+from services.elevenlab_stt import speech_to_text
+from services.session_manager import start_session, add_message, get_session
 from services.github_parser import fetch_github_profile
 from services.context_builder import build_candidate_context
-from services.emotion import text_emotion, audio_emotion
-from services.camera import analyze_camera_frame
-from services.elevenlab_stt import speech_to_text
+from services.emotion import text_emotion
+from services.vertex_wrapper import evaluate_answer  # Gemini inside
 
+# ===== APP =====
 app = FastAPI()
 
 app.add_middleware(
@@ -29,194 +27,133 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class StartResponse(BaseModel):
-    session_id: str
-    question: str
-
-class AnswerRequest(BaseModel):
-    session_id: str
-    answer: str
-    skill: str
-    project: str | None = None
-
-# ---------- TTS ----------
-from fastapi import Query
-
+# ================== TTS ==================
 @app.get("/tts")
-def tts(text: str = Query(...)):
-    return text_to_speech(text)
-
-# ---------- CAMERA ----------
-@app.post("/camera/analyze")
-async def camera(frame: UploadFile = File(...)):
-    return await analyze_camera_frame(frame)
-
-# ---------- START INTERVIEW ----------
-import uuid
-
-@app.get("/start-interview/{username}")
-def start_interview(username: str):
-    profile = fetch_github_profile(username)
-    if "error" in profile:
-        return HTTPException(status_code=400, detail="GitHub fetch failed")
-
-    github_context = build_candidate_context(profile)
-
-    greeting_prompt = f"""
-You are a friendly but professional technical interviewer.
-
-Candidate context:
-{github_context}
-
-Start the interview.
-Greet the candidate naturally.
-Explain interview flow briefly.
-Do not ask technical questions yet.
-"""
-
-    greeting = vertex_speak(greeting_prompt)
-
-    # 🔑 ALWAYS create a session_id
-    session_id = str(uuid.uuid4())
-
-    # 🧠 Store everything needed for the interview
-    start_session(
-        session_id=session_id,
-        github_context=github_context,
-        skill="Frontend / Fullstack",   # can be dynamic later
-        project="AI Interviewer",
-        first_message=greeting["text"]
+def tts(text: str):
+    return StreamingResponse(
+        stream_tts(text),
+        media_type="audio/mpeg",
+        headers={
+            "Cache-Control": "no-store",
+            "Accept-Ranges": "bytes"
+        }
     )
 
-    return {
-        "session_id": session_id,
-        "question": greeting["text"],
-        "tts_url": greeting["tts_url"]
-    }
 
+# ================== STT ==================
+@app.post("/stt/live")
+async def live_stt(audio: UploadFile = File(...)):
+    try:
+        audio_bytes = await audio.read()
+        text = speech_to_text(audio_bytes)
+        return {"text": text or ""}
+    except Exception:
+        traceback.print_exc()
+        return {"text": ""}
 
-# ---------- ANSWER ----------
+# ================== START INTERVIEW ==================
+@app.get("/start-interview/{username}")
+def start_interview(username: str):
+    try:
+        # 🔥 GitHub OPTIONAL
+        profile = fetch_github_profile(username)
+        github_context = (
+            build_candidate_context(profile)
+            if profile else
+            "No GitHub data available."
+        )
 
+        greeting = gemini_generate(
+            f"""
+You are a professional technical interviewer.
+
+Candidate background:
+{username}
+
+Greet the candidate.
+Explain interview flow briefly.
+Do not ask technical questions yet.
+also donot give big para try to keep sentence small and concise
+"""
+        )
+
+        if not greeting:
+            raise Exception("Gemini returned empty greeting")
+
+        session_id = str(uuid.uuid4())
+
+        start_session(
+            session_id=session_id,
+            github_context=github_context,
+            skill="Fullstack",
+            project="AI Interviewer",
+            first_message=greeting
+        )
+
+        return {
+            "session_id": session_id,
+            "question": greeting
+        }
+
+    except Exception:
+        traceback.print_exc()
+        raise HTTPException(500, "Failed to start interview")
+
+# ================== ANSWER ==================
 @app.post("/answer")
 async def answer(
     session_id: str = Form(...),
-    answer: str | None = Form(None),
+    answer: str = Form(""),
     metrics: str | None = Form(None),
-    file: UploadFile | None = File(None)
 ):
-    session = get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=400, detail="No active session")
-
-    transcript = answer or ""
-    audio_em = None
-
-    if not transcript.strip():
-        return {
-            "evaluation": None,
-            "next_question": "I couldn't hear that clearly. Could you please repeat?"
-        }
-
-    text_em = text_emotion(transcript)
-    camera_metrics = json.loads(metrics) if metrics else {}
-
-    # store candidate answer
-    add_message(
-        session_id=session_id,
-        role="candidate",
-        text=transcript,
-        text_emotion=text_em,
-        audio_emotion=audio_em,
-        camera_metrics=camera_metrics
-    )
-
-    # 🔥 GEMINI / VERTEX CALL (ONLY ONCE)
     try:
+        session = get_session(session_id)
+        if not session:
+            raise HTTPException(400, "No active session")
+
+        transcript = answer.strip()
+        if transcript == "":
+            return {
+                "evaluation": None,
+                "next_question": "I couldn't hear that clearly. Could you repeat?"
+            }
+
+        text_em = text_emotion(transcript)
+        camera_metrics = json.loads(metrics) if metrics else {}
+
+        add_message(
+            session_id=session_id,
+            role="candidate",
+            text=transcript,
+            text_emotion=text_em,
+            camera_metrics=camera_metrics
+        )
+
         result = evaluate_answer(
             answer=transcript,
             skill=session["skill"],
             project=session.get("project"),
             github_summary=session["github_context"],
             camera_metrics=camera_metrics,
-            audio_emotion=audio_em,
             text_emotion=text_em
         )
-    except Exception as e:
-        print("EVALUATION ERROR:", e)
+
+        next_q = result.get("next_question") or \
+            "Thanks. Can you explain that in more detail?"
+
+        add_message(
+            session_id=session_id,
+            role="interviewer",
+            text=next_q
+        )
+
         return {
-            "evaluation": None,
-            "next_question": "Let's move on. Can you explain a recent project you worked on?"
+            "evaluation": result,
+            "next_question": next_q
         }
 
-    next_q = result.get("next_question")
-    if not next_q:
-        next_q = "Can you explain that in more detail?"
-
-    add_message(session_id=session_id, role="interviewer", text=next_q)
-
-    return {
-        "evaluation": result,
-        "next_question": next_q
-    }
-
-@app.get("/test-tts")
-def test_tts():
-    return text_to_speech("Hello, this is a live TTS test")
-
-@app.post("/stt/live")
-async def live_stt(audio: UploadFile = File(...)):
-    audio_bytes = await audio.read()
-    text = speech_to_text(audio_bytes)
-    return {
-        "text": text
-    }
-
-from fastapi.responses import StreamingResponse
-from services.elevenlab_tts import stream_tts
-
-@app.get("/tts/stream")
-def tts_stream(text: str):
-    return StreamingResponse(
-        stream_tts(text),
-        media_type="audio/mpeg"
-    )
-
-from services.emotion import text_emotion, audio_emotion
-'''
-@app.post("/interview/answer")
-async def interview_answer(audio: UploadFile = File(...)):
-    audio_bytes = await audio.read()
-
-    # 1️⃣ Speech → Text
-    user_text = speech_to_text(audio_bytes)
-
-    # 2️⃣ Emotion analysis
-    text_em = text_emotion(user_text)
-    audio_em = audio_emotion(audio_bytes)
-
-    # 3️⃣ Fuse emotions (simple, explainable)
-    if audio_em["score"] > 0.6 and text_em["emotion"] == "happy":
-        final_emotion = "confident"
-    elif audio_em["score"] < 0.4 or text_em["emotion"] == "concerned":
-        final_emotion = "nervous"
-    else:
-        final_emotion = "neutral"
-
-    # 4️⃣ Adaptive question
-    if final_emotion == "nervous":
-        next_question = "No worries. Can you explain a project you enjoyed working on?"
-    elif final_emotion == "confident":
-        next_question = "Great. Can you explain a challenging technical decision you made?"
-    else:
-        next_question = "Can you tell me more about your technical experience?"
-
-    return {
-        "user_text": user_text,
-        "emotion": {
-            "final": final_emotion,
-            "text": text_em,
-            "audio": audio_em
-        },
-        "next_question": next_question
-    }
-'''
+    except HTTPException:
+        raise
+    except Exception:
+        traceback.print_exc()
+        raise HTTPException(500, "Answer processing failed")

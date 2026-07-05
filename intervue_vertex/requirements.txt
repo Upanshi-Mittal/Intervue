@@ -6,12 +6,22 @@ requests
 httpx
 python-multipart
 
+# AI Providers — fallback chain (Groq → Gemini → HuggingFace)
+groq
+google-genai
 
-google-cloud-aiplatform
-google-generativeai
-vertexai
-
-
+# ElevenLabs TTS / STT
 elevenlabs
+
+# Audio processing
+librosa
 soundfile
+
+# Sentiment / emotion
+vaderSentiment
+
+# Computer vision (camera metrics)
 opencv-python
+
+# PDF reports
+reportlab

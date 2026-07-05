@@ -102,11 +102,11 @@ import Interviewer from "./_components/Interviewer";
 
 function speakStream(text: string) {
   const audio = new Audio(
-    `http://localhost:8000/tts/stream?text=${encodeURIComponent(text)}`
+    `http://localhost:8000/tts?text=${encodeURIComponent(text)}`
   );
-  audio.play().catch(err => {
-    console.error("Audio play failed:", err);
-  });
+
+  audio.preload = "auto";
+  audio.play().catch(console.error);
 }
 
 function CameraFeed({ active, videoRef }: { active: boolean; videoRef: React.RefObject<HTMLVideoElement> }) {
@@ -257,7 +257,7 @@ export default function InterviewPage() {
 }
 
     };
-  }, [recording]);
+  }, [recording, sessionId]);
 
 
 

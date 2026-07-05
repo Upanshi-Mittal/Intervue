@@ -1,20 +1,9 @@
-import os
+"""
+vertex_wrapper.py — Drop-in replacement using the AI fallback chain.
+Function name kept as evaluate_answer() so app.py imports still work.
+"""
 import json
-import vertexai
-from vertexai.generative_models import GenerativeModel
-
-_model = None
-
-
-def get_model():
-    global _model
-    if _model is None:
-        vertexai.init(
-            project=os.getenv("GCP_PROJECT_ID"),
-            location="us-central1"
-        )
-        _model = GenerativeModel("gemini-1.5-pro")
-    return _model
+from services.ai_fallback import ai_generate_json
 
 
 def evaluate_answer(
@@ -24,12 +13,15 @@ def evaluate_answer(
     github_summary: dict | None = None,
     camera_metrics: dict | None = None,
     audio_emotion: dict | None = None,
-    text_emotion: dict | None = None
-):
-    model = get_model()
+    text_emotion: dict | None = None,
+) -> dict:
+    system = (
+        "You are a senior technical interviewer with human-like judgment. "
+        "Always respond with valid JSON only — no markdown, no text outside JSON."
+    )
 
     prompt = f"""
-You are a senior technical interviewer with human-like judgment.
+You are evaluating a candidate in a live technical interview.
 
 Candidate Profile:
 - Skill focus: {skill}
@@ -54,51 +46,19 @@ TASK:
 1. Judge technical correctness
 2. Judge confidence & communication
 3. Adapt interviewer tone
-4. Decide next best question
+4. Decide next best question (keep it concise, one sentence)
 
-Return ONLY valid JSON:
+Return ONLY this JSON:
 
 {{
-  "score": 0-10,
+  "score": <integer 0-10>,
   "confidence_level": "low | medium | high",
-  "communication_feedback": "...",
-  "technical_feedback": "...",
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "next_question": "...",
+  "communication_feedback": "<one sentence>",
+  "technical_feedback": "<one sentence>",
+  "strengths": ["<strength1>"],
+  "weaknesses": ["<weakness1>"],
+  "next_question": "<next interview question>",
   "interviewer_tone": "encouraging | neutral | challenging"
 }}
 """
-
-    try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
-
-        json_text = text[text.find("{"): text.rfind("}") + 1]
-        data = json.loads(json_text)
-
-        return data
-
-    except Exception:
-        return {
-            "score": 5,
-            "confidence_level": "medium",
-            "communication_feedback": "",
-            "technical_feedback": "",
-            "strengths": [],
-            "weaknesses": ["Unable to evaluate clearly."],
-            "next_question": "Could you explain that in a bit more detail?",
-            "interviewer_tone": "neutral"
-        }
-def vertex_speak(text: str):
-    """
-    TEMP: placeholder TTS
-    Replace later with real Vertex TTS
-    """
-    model = get_model()
-    response = model.generate_content(text)
-
-    return {
-        "text": response.text.strip(),
-        "tts_url": None
-    }
+    return ai_generate_json(prompt, system=system)

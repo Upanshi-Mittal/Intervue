@@ -1,14 +1,14 @@
-import os
-from google import genai
-from dotenv import load_dotenv
+"""
+gemini_client.py — Drop-in replacement using the AI fallback chain.
+Function name kept as gemini_generate() so app.py imports still work.
+"""
+from services.ai_fallback import ai_generate
 
-load_dotenv()
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def gemini_generate(prompt: str) -> str:
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
+    system = (
+        "You are a professional technical interviewer. "
+        "Keep your responses concise and conversational. "
+        "Do not give long paragraphs — use short, natural sentences."
     )
-    return response.text.strip()
+    return ai_generate(prompt, system=system)
